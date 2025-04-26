@@ -12,39 +12,38 @@ import {
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Welcome');
   const [loading, setLoading] = useState(false);
   const [userInput, setUserInput] = useState('');
+  const [fetchedMarkdown, setFetchedMarkdown] = useState('');
 
-  const markdownWelcome = `# Welcome to VerifAI!`;
-  const markdownFactCheck = `1. **Fake News or Not:** No
-
-2. **Reasoning:** 
-   The video frames show a group of young men performing a stunt where a metal rod is being pressed against their mouths or jaws, likely as a display of strength or endurance. The transcript "میری تیجاں ڈھونڈی پھا۔" (transliteration: "meri tejan dhoondi pha") is in Saraiki/Punjabi and roughly translates to "I have found my strength" or "I have found my energy." There is no indication from the visuals or the transcript that this video is making any factual claim about news, politics, health, or any other topic that could be classified as "fake news." It appears to be a stunt or entertainment video.
-
-3. **Supporting Evidence:**
-   - The visuals show a physical stunt, not a news event or informational content.
-   - The transcript is a personal or motivational statement, not a factual claim.
-   - There are no references to current events, health advice, or any controversial topic.
-   - The setting and participants suggest a casual, possibly rural environment, typical for social media entertainment content.
-
-4. **Sources:**
-   - [General understanding of fake news criteria](https://en.wikipedia.org/wiki/Fake_news)
-   - [Translation and context of Saraiki/Punjabi phrase](https://translate.google.com/)
-
-5. **Conclusion:**
-   The video is not fake news. It is a stunt or entertainment video with no connection to any news topic or factual claim that could be classified as misinformation or disinformation.
-`;
-
-  const handleTabSwitch = () => {
+  const handleTabSwitch = async () => {
     setActiveTab('Fact Check');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    await fetchFactCheckData();
   };
+
+  const fetchFactCheckData = async () => {
+  try {
+    setLoading(true);
+    const response = await fetch('https://your-backend-url.com/api/factcheck', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ link: userInput }), // sending user input (if needed)
+    });
+
+    const data = await response.json(); // assuming backend responds with JSON
+    setFetchedMarkdown(data.markdown); // data.markdown is your backend text
+  } catch (error) {
+    console.error('Error fetching fact check:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCloseApp = () => {
     // TODO: Add real close logic if needed (depending on platform)
@@ -65,8 +64,7 @@ export default function App() {
           />
 
           <View style={styles.titleContainer}>
-            <Text style={styles.factcheck_title}>
-              Title of the thingi that might become too long to display
+            <Text style={styles.factcheck_title}>{fetchedMarkdown.title}
             </Text>
           </View>
 
@@ -86,10 +84,11 @@ export default function App() {
               source={require('./assets/images/verifAI_logo.png')}
               style={styles.logo}
             />
-            <Markdown style={markdownStyles}>
-              {markdownWelcome}
-            </Markdown>
-
+            <View style={{ marginTop: -25, marginBottom: 20 }}>
+              <Markdown style={markdownStyles}>
+                # Welcome to VerifAI!
+              </Markdown>
+            </View>
             {/* --- NEW Text Input Field Here --- */}
             <TextInput
               style={styles.textInput}
@@ -132,7 +131,7 @@ export default function App() {
             ) : (
               <>
                 <Image source={require('./assets/images/verifAI_logo.png')} style={styles.result_number} />
-                <Markdown style={markdownStyles}>{markdownFactCheck}</Markdown>
+                <Markdown style={markdownStyles}>{fetchedMarkdown.markdown}</Markdown>
               </>
             )}
           </View>
@@ -154,6 +153,12 @@ export default function App() {
           <MaterialIcons name="fact-check" size={28} color={activeTab === 'Fact Check' ? '#f8f5f3' : '#777'} />
           <Text style={[styles.navText, activeTab === 'Fact Check' && styles.activeNavText]}>Fact Check</Text>
         </TouchableOpacity>
+
+        <LinearGradient
+          colors={['#ff7e5f', '#feb47b']}
+          style={styles.gradient}
+        >
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -203,7 +208,6 @@ const styles = StyleSheet.create({
   },
   markdownContainerWelcome: {
     alignItems: 'center',
-    marginTop: 10,
   },
   markdownContainerFactCheck: {
     marginTop: 10,

@@ -8,4 +8,10 @@ const config = getDefaultConfig(__dirname);
 // Hier wird die Share Extension eingebunden
 module.exports = withShareExtension(config, {
   isCSSEnabled: true, // optional, für Web-Support (kannst auch false oder weglassen)
+  resolver: {
+    extraNodeModules: {
+      // Hier fügst du ggf. native Module hinzu
+      'react-native-linear-gradient': require.resolve('react-native-linear-gradient'),
+    },
+  },
 });
