@@ -28,17 +28,28 @@ def is_valid_markdown(md_text):
         return False
 
 def extract_number_and_clean(md_text):
-    number_match = re.search(r'\[(\d+)\]\s*$', md_text)
+    # Step 1: Find the last triple backticks
+    last_backticks = md_text.rfind("```")
+
+    if last_backticks == -1:
+        # No triple backticks at all
+        cleaned_md = clean_markdown_block(md_text)
+        return cleaned_md, None
+
+    # Step 2: Split content: Markdown block and possible number after
+    markdown_part = md_text[:last_backticks + 3]  # include ```
+    remainder = md_text[last_backticks + 3:].strip()
+
+    # Step 3: Try to find a number in the remainder
+    number_match = re.match(r'^(\d+)', remainder)  # start of remainder must be digits
 
     if number_match:
         extracted_number = int(number_match.group(1))
-        # Remove the [number] part from the text
-        md_text = md_text[:number_match.start()].rstrip()
     else:
         extracted_number = None
 
-    # Now clean the markdown block
-    cleaned_md = clean_markdown_block(md_text)
+    # Step 4: Clean the markdown block
+    cleaned_md = clean_markdown_block(markdown_part)
 
     return cleaned_md, extracted_number
 
@@ -160,7 +171,13 @@ class VideoChecker:
         cleaned_md, number_percent = extract_number_and_clean(text_result)
 
         if not is_valid_markdown(cleaned_md):
-            cleaned_md = "```Something went wrong :(```"
+            cleaned_md = "```Something went wrong :( [model did not produce valid Markdown code]```"
+        if not number_percent and number_percent != 0: #correctly sets to 0, when returned percentage is 0
+            number_percent = 60
+        if number_percent is not None and number_percent > 100:
+            number_percent = 100
+        if number_percent is not None and number_percent < 0:
+            number_percent = 0
 
         print(cleaned_md, "\nPercentage: ", number_percent)
         print("Transcribed Audio: ", transcription.text)
@@ -168,7 +185,12 @@ class VideoChecker:
         return cleaned_md, number_percent
 
 
-test_video = VideoChecker()
+#test_video = VideoChecker()
 #test_video.check_fake_news("https://scontent-muc2-1.cdninstagram.com/o1/v/t16/f2/m86/AQNWaTdA78Ug5enthEKFs8veqUEMekOQRP-N7Py8i00R_s2y3vQft_StD0vwI7RCw3sei9g7a5OtIN128xN8SHLIwWWbc-1NCnC7Ico.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=100&vs=672067241865076_1944884899&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC83NDRGQjE2RTVEMkRFNTc5NTNBRjVBMzY4QkU0RjY4MF92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPcFNKUjJ5SXdfNDZsMEVBQm9RbXdLdHJ3OV9icV9FQUFBRhUCAsgBACgAGAAbABUAACaEspuV3PLSPxUCKAJDMywXQCbdsi0OVgQYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfEL4YLCSTLWYvbCyJIxCtG6_HCrKfHQD7o2RN7iRRv4qA&oe=680E8F14&_nc_sid=d885a2")
 
-# test_video.check_fake_news("https://scontent-fra3-1.cdninstagram.com/o1/v/t16/f2/m86/AQPk3oEeUPekgD9YQAGQHPv6BnBYRad_5GXOKuwaq2vVCvD_tEVoO0v4frmBQk3PDKFZn1ih19rfaqADx_g8Pzj94aHwbznj57yQ7VY.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=105&vs=1006743031580223_23287292&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9FMDQ1OEVFNUM0RjI2Q0M5MkI3RDc3QzE3QjlBNEZBRV92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPd3hTQjF1dDdKZXZTa0dBREJLSmMwYV9VcGhicV9FQUFBRhUCAsgBACgAGAAbABUAACaM4MewyK3NPxUCKAJDMywXQDwIcrAgxJwYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfGECnvWYlhvR4h7ybsP1T6n17Ph09ciWsSEYQW3Ph87AQ&oe=680EC9E3&_nc_sid=d885a2")
+#test_video.check_fake_news("https://scontent-fra3-1.cdninstagram.com/o1/v/t16/f2/m86/AQPk3oEeUPekgD9YQAGQHPv6BnBYRad_5GXOKuwaq2vVCvD_tEVoO0v4frmBQk3PDKFZn1ih19rfaqADx_g8Pzj94aHwbznj57yQ7VY.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=105&vs=1006743031580223_23287292&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9FMDQ1OEVFNUM0RjI2Q0M5MkI3RDc3QzE3QjlBNEZBRV92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPd3hTQjF1dDdKZXZTa0dBREJLSmMwYV9VcGhicV9FQUFBRhUCAsgBACgAGAAbABUAACaM4MewyK3NPxUCKAJDMywXQDwIcrAgxJwYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfGECnvWYlhvR4h7ybsP1T6n17Ph09ciWsSEYQW3Ph87AQ&oe=680EC9E3&_nc_sid=d885a2")
+
+text_for_test = f"```1. **Fake News or Not:** (Yes/No)\n2. **Reasoning:** (Why or why not the content is fake news)\n3. **Supporting Evidence:** (Based on the visuals and transcription, list any clear evidence for your conclusion)\n4. **Sources:** (List any of the online sources you may have used)\n5. **Conclusion:** (State your conclusion here``` 0)"
+print(extract_number_and_clean(text_for_test))
+
+
