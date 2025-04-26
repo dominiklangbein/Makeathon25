@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.aifactchecker.verifai",
       "supportsTablet": true
     },
     "android": {
@@ -16,7 +17,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "SEND",
+          "category": ["DEFAULT", "BROWSABLE"]
+        }
+      ],
+      "permissions": ["READ_EXTERNAL_STORAGE"]
     },
     "web": {
       "bundler": "metro",
@@ -33,10 +41,19 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-share-extension"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "223dcd6e-3732-4591-9d00-1571c9e295a2"
+      }
     }
   }
 }

@@ -9,8 +9,7 @@ import { View, Text, Button } from 'react-native'; // Added
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import React from 'react';
-
+import * as React from 'react';
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +37,7 @@ export default function RootLayout() {
 
     const subscription = Linking.addEventListener('url', handleDeepLink);
 
+    // Check for the initial deep link if the app was opened via deep link
     (async () => {
       const initialUrl = await Linking.getInitialURL();
       if (initialUrl) {
@@ -50,10 +50,6 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, []);
-
-  if (!loaded) {
-    return null;
-  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
