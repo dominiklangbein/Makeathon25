@@ -1,0 +1,79 @@
+{
+  "expo": {
+    "name": "ai-factchecker",
+    "slug": "ai-factchecker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/verifAI_logo.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "bundleIdentifier": "com.dominiklangbein.ai-factchecker",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.aifactchecker.verifai",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/verifAI_logo.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/verifAI_logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/verifAI_logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+    "expo-share-extension",
+    {
+      "activationRules": [
+        { "type": "url", "max": 1 },
+        { "type": "text" }
+      ]
+    }
+  ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "aifactcheckerShareExtension",
+                  "bundleIdentifier": "com.dominiklangbein.ai-factchecker.ShareExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.dominiklangbein.ai-factchecker"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "8b4486fa-84fa-4c19-890b-0adbf6d18a4d"
+      },
+      "appleApplicationGroup": "group.com.dominiklangbein.ai-factchecker"
+    },
+    "owner": "dominiklangbein"
+  }
+}
