@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-/* import { LinearGradient } from 'expo-linear-gradient';
-import CircularProgress from 'react-native-circular-progress-indicator';*/
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Welcome');
   const [loading, setLoading] = useState(false);
+  const [userInput, setUserInput] = useState('');
 
   const markdownWelcome = `# Welcome to VerifAI!`;
   const markdownFactCheck = `1. **Fake News or Not:** No
@@ -31,14 +38,38 @@ export default function App() {
    The video is not fake news. It is a stunt or entertainment video with no connection to any news topic or factual claim that could be classified as misinformation or disinformation.
 `;
 
+  const handleTabSwitch = () => {
+    setActiveTab('Fact Check');
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+  };
 
+  const handleCloseApp = () => {
+    // TODO: Add real close logic if needed (depending on platform)
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: activeTab === 'Welcome' ? '#f8f6f3' : 'white' }]}>
-      {/* Conditionally Render App Bar */}
+
+      {/* App Bar */}
       {activeTab === 'Fact Check' && (
         <View style={styles.appBar}>
-          <MaterialIcons name="arrow-back-ios" size={24} color="black" style={{ marginLeft: 10 }} onPress={() => setActiveTab('Welcome')}/>
+          <MaterialIcons
+            name="arrow-back-ios"
+            size={24}
+            color="black"
+            style={{ marginLeft: 10 }}
+            onPress={() => setActiveTab('Welcome')}
+          />
+
+          <View style={styles.titleContainer}>
+            <Text style={styles.factcheck_title}>
+              Title of the thingi that might become too long to display
+            </Text>
+          </View>
+
           <Image
             source={require('./assets/images/verifAI_logo.png')}
             style={styles.appBarLogo}
@@ -49,7 +80,6 @@ export default function App() {
 
       {/* Scrollable Content */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Only show Logo and Welcome text on Welcome screen */}
         {activeTab === 'Welcome' && (
           <View style={styles.markdownContainerWelcome}>
             <Image
@@ -60,35 +90,52 @@ export default function App() {
               {markdownWelcome}
             </Markdown>
 
+            {/* --- NEW Text Input Field Here --- */}
+            <TextInput
+              style={styles.textInput}
+              placeholder="Paste your link here..."
+              placeholderTextColor="#aaa"
+              value={userInput}
+              onChangeText={text => setUserInput(text)}
+            />
+
+            {/* Buttons */}
             <View style={styles.buttonGroup}>
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#2aa1c9' }]}
-                onPress={() => setActiveTab('Fact Check')}>
+                onPress={handleTabSwitch}>
                 <Text style={styles.buttonText}>FACT CHECK</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#3884d5' }]}
-                onPress={() => setActiveTab('Fact Check')}>
+                onPress={handleCloseApp}>
                 <Text style={styles.buttonText}>FACT CHECK and CLOSE</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#644fdd' }]}
-                onPress={() => setActiveTab('Fact Check')}>
+                onPress={handleCloseApp}>
                 <Text style={styles.buttonText}>CLOSE</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Fact Check screen content */}
+        {/* Fact Check Screen */}
         {activeTab === 'Fact Check' && (
-        <View style={styles.markdownContainerFactCheck}>
-          <Markdown style={markdownStyles}>
-            {markdownFactCheck}
-          </Markdown>
-        </View>
+          <View style={styles.markdownContainerFactCheck}>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size={75} color="#3884d5" />
+              </View>
+            ) : (
+              <>
+                <Image source={require('./assets/images/verifAI_logo.png')} style={styles.result_number} />
+                <Markdown style={markdownStyles}>{markdownFactCheck}</Markdown>
+              </>
+            )}
+          </View>
         )}
       </ScrollView>
 
@@ -96,17 +143,15 @@ export default function App() {
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => setActiveTab('Welcome')}
-        >
+          onPress={() => setActiveTab('Welcome')}>
           <MaterialIcons name="home" size={28} color={activeTab === 'Welcome' ? '#f8f5f3' : '#777'} />
           <Text style={[styles.navText, activeTab === 'Welcome' && styles.activeNavText]}>Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => setActiveTab('Fact Check')}
-        >
-          <MaterialIcons name="fact-check" size={28} color={activeTab === 'Fact Check' ? '#f8f5f3' : '#777'}/>
+          onPress={() => setActiveTab('Fact Check')}>
+          <MaterialIcons name="fact-check" size={28} color={activeTab === 'Fact Check' ? '#f8f5f3' : '#777'} />
           <Text style={[styles.navText, activeTab === 'Fact Check' && styles.activeNavText]}>Fact Check</Text>
         </TouchableOpacity>
       </View>
@@ -128,11 +173,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#eee',
   },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  factcheck_title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    marginRight: 10,
+  },
   appBarLogo: {
     width: 60,
     height: 60,
     marginLeft: 'auto',
-    marginRight: 10
   },
   scrollContent: {
     padding: 10,
@@ -144,13 +201,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
   markdownContainerWelcome: {
     alignItems: 'center',
     marginTop: 10,
@@ -158,17 +208,12 @@ const styles = StyleSheet.create({
   markdownContainerFactCheck: {
     marginTop: 10,
   },
-  progressContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
   buttonGroup: {
     width: '100%',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 35,
+    marginTop: 5,
   },
   button: {
     width: '85%',
@@ -182,6 +227,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     textAlign: 'center',
+  },
+  textInput: {
+    width: '85%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 18,
+    marginTop: 20,
+    color: '#333',
   },
   bottomNav: {
     flexDirection: 'row',
@@ -203,6 +259,17 @@ const styles = StyleSheet.create({
     color: '#f8f5f3',
     fontWeight: 'bold',
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    zIndex: 10,
+  },
+  result_number: {
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
 });
 
 const markdownStyles = {
@@ -212,4 +279,3 @@ const markdownStyles = {
     paddingHorizontal: 10,
   },
 };
-
