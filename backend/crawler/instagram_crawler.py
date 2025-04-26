@@ -3,15 +3,13 @@ import os
 import uuid
 from datetime import datetime
 import requests
-import base64
-
 
 
 class InstagramPost:
-    def __init__(self, caption, is_video, media_content, content_url):
+    def __init__(self, caption, is_video, content_url):
         self.caption = caption
         self.is_video = is_video
-        self.media_content = media_content  # Bytes of the media (image or video)
+        # self.media_content = media_content  # Bytes of the media (image or video)
         self.content_url = content_url
 
     def __str__(self):
@@ -40,22 +38,25 @@ class Downloader:
         media_url = post.video_url if post.is_video else post.url
 
         # Download media content into memory
-        response = self.session.get(media_url)
-        media_content = response.content  # media in bytes
+        # response = self.session.get(media_url)
+        # media_content = response.content  # media in bytes
 
         # Encode media to Base64
-        media_base64 = base64.b64encode(media_content).decode('utf-8')
+        # media_base64 = base64.b64encode(media_content).decode('utf-8')
 
         # Return InstagramPost object
+
+        print(f'Successful fetching post: {shortcode}')
         return InstagramPost(
             caption=post.caption or '',
             is_video=post.is_video,
-            media_content=media_base64,
+            # media_content=media_base64,
             content_url=media_url
         )
 
 
-    def download_instagram_post(self, post_url, main_folder='instagram_downloads') -> str:
+
+    def download_instagram_post(post_url, main_folder='instagram_downloads') -> str:
         # Initialize Instaloader
         loader = instaloader.Instaloader()
 
@@ -94,11 +95,14 @@ class Downloader:
 
 
 # # Example usage
-post_url = "https://www.instagram.com/p/DIvPTGQTXNe/"
+# post_url = "https://www.instagram.com/p/DIvPTGQTXNe/"
+# post_url = "https://www.instagram.com/p/DI6iGH7st25/?utm_source=ig_web_copy_link"
+post_url = "https://www.instagram.com/p/DI6iGH7st25/?utm_source=ig_web_copy_link"
 # # download_instagram_post(post_url)
 #
 # # Example usage
-# downloader = Downloader()
-# insta_post = downloader.download_instagram_post(post_url)
-# print(insta_post)
+
+downloader = Downloader()
+#insta_post = downloader.fetch_instagram_post(post_url)
+#print(insta_post)
 # print(f"Media content size: {len(insta_post.media_content)} bytes")
