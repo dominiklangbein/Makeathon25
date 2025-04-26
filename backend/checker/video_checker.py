@@ -2,20 +2,45 @@ from IPython.display import display, Image, Audio
 
 import cv2  # We're using OpenCV to read video, to install !pip install opencv-python
 import base64
-import time
 from openai import OpenAI, api_key
 import os
 import requests
-import numpy as np
 import cv2
 from dotenv import load_dotenv
 import tempfile
-import subprocess
-import ffmpeg
 from moviepy import VideoFileClip
+import math
+import re
+import markdown
 
 load_dotenv()
 API_KEY = os.environ.get('OPENAI_KEY')
+
+def clean_markdown_block(md_text):
+    cleaned = re.sub(r'^```[ ]*markdown[ ]*\n', '```', md_text, flags=re.IGNORECASE)
+    return cleaned
+
+def is_valid_markdown(md_text):
+    try:
+        html = markdown.markdown(md_text)
+        return bool(html.strip())
+    except Exception:
+        return False
+
+def extract_number_and_clean(md_text):
+    number_match = re.search(r'\[(\d+)\]\s*$', md_text)
+
+    if number_match:
+        extracted_number = int(number_match.group(1))
+        # Remove the [number] part from the text
+        md_text = md_text[:number_match.start()].rstrip()
+    else:
+        extracted_number = None
+
+    # Now clean the markdown block
+    cleaned_md = clean_markdown_block(md_text)
+
+    return cleaned_md, extracted_number
 
 class VideoChecker:
     def check_fake_news(self, video_url: str):
@@ -26,8 +51,7 @@ class VideoChecker:
         video_bytes = response.content
 
         #print(response.status_code, "\n", len(response.content)) -> seems fine
-        #TODO: 1) check for efficiency in using stream (start processing images, before full video loaded)
-        #TODO: 2) check if batch processing can be of advantage
+        #TODO: check for efficiency in using stream (start processing images, before full video loaded)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
             tmp_file.write(video_bytes)
@@ -48,7 +72,6 @@ class VideoChecker:
             file=open(tmp_audio_filename, "rb"),
         )
 
-        frame_count = 0 #remove later
         base64Frames = []
         while video.isOpened():
             success, frame = video.read()
@@ -57,9 +80,24 @@ class VideoChecker:
             _, buffer = cv2.imencode(".jpg", frame)
             base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
 
+
             #if frame_count % 100 == 0:
             #    cv2.imshow("Frame", frame)
             #    cv2.waitKey(500) #-> frames seem to work
+
+        fps = video.get(cv2.CAP_PROP_FPS)
+        frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        duration_seconds = frame_count / fps
+        print("FPS: ", fps, "\nFrames: ", frame_count, "\nDuration: ", duration_seconds)
+
+
+        #TODO: instead of here, do this immediately in the video split
+        if duration_seconds < 10:
+            in_between_frames = 5
+        elif duration_seconds < 60:
+            in_between_frames = 25
+        else:
+            in_between_frames = 50
 
         audio_clip.close()
         video.release()
@@ -77,11 +115,14 @@ class VideoChecker:
                         {
                             "type": "input_text",
                             "text": (
-                                "You are a sophisticated AI that analyzes videos for fake news detection. Please provide your analysis in the following format:\n\n"
-                                "1. **Fake News or Not:** (Yes/No)\n"
-                                "2. **Reasoning:** (Why or why not the content is fake news)\n"
-                                "3. **Supporting Evidence:** (Based on the visuals and transcription, list any clear evidence for your conclusion)\n"
-                                "4. **Sources:** (List any of the online sources you may have used)"
+                                "You are a sophisticated AI that analyzes videos for fake news detection. Please provide your analysis in the following structure, wrapped within a Markdown format (as shown below):\n\n"
+                                f"```1. **Fake News or Not:** (Yes/No)\n2. **Reasoning:** (Why or why not the content is fake news)\n3. **Supporting Evidence:** (Based on the visuals and transcription, list any clear evidence for your conclusion)\n4. **Sources:** (List any of the online sources you may have used)\n5. **Conclusion:** (State your conclusion here)```"
+                            )
+                        },
+                        {
+                            "type": "input_text",
+                            "text": (
+                                "At the very end of your reply, after the Markdown output, add a number in percent, of how confidence you are this is fake news. Leave out the percent sign and just give me the number."
                             )
                         }
                     ]
@@ -106,7 +147,7 @@ class VideoChecker:
                                 "type": "input_image",
                                 "image_url": f"data:image/jpeg;base64,{frame}"
                             }
-                            for frame in base64Frames[0::25] #originally 0::25; also good (and fast!) results for 100
+                            for frame in base64Frames[0::in_between_frames] #originally 0::25; also good (and fast!) results for 100
                         ]
                     ]
                 }
@@ -114,8 +155,17 @@ class VideoChecker:
             temperature=0.0,
         )
 
-        print(response.output_text)
+        text_result = response.output_text
+        #text_result = clean_markdown_block(text_result)
+        cleaned_md, number_percent = extract_number_and_clean(text_result)
+
+        if not is_valid_markdown(cleaned_md):
+            cleaned_md = "```Something went wrong :(```"
+
+        print(cleaned_md, "\nPercentage: ", number_percent)
         print("Transcribed Audio: ", transcription.text)
+
+        return cleaned_md, number_percent
 
 
 test_video = VideoChecker()

@@ -1,10 +1,6 @@
-import openai
-import panel as pn
 import os
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
-from openai import api_key
 from langchain.prompts import PromptTemplate
 
 load_dotenv()
