@@ -1,5 +1,3 @@
-from IPython.display import display, Image, Audio
-
 import cv2  # We're using OpenCV to read video, to install !pip install opencv-python
 import base64
 from openai import OpenAI, api_key
@@ -9,7 +7,6 @@ import cv2
 from dotenv import load_dotenv
 import tempfile
 from moviepy import VideoFileClip
-import math
 import re
 import markdown
 
@@ -73,10 +70,18 @@ class VideoChecker:
         duration_seconds = frame_count / fps
         if duration_seconds < 10:
             in_between_frames = 5
+            max_width = 1280
+            max_height = 720
         elif duration_seconds < 60:
             in_between_frames = 25
-        else:
+            max_width = 1280
+            max_height = 720
+        elif duration_seconds < 600:
             in_between_frames = 50 #this block works regardless of processing logic -> keep as desired
+            max_width = 480
+            max_height = 360
+        else:
+            return ["```Video is too long to be supported by our current model.```", 0]
 
         audio_clip = VideoFileClip(tmp_filename).audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio_file:
@@ -90,8 +95,6 @@ class VideoChecker:
 
         #TODO: remove frame_count later
 
-        max_width = 1280
-        max_height = 720
         frame_id = 0
         base64Frames = []
         while video.isOpened():
@@ -102,7 +105,7 @@ class VideoChecker:
             if frame_id % in_between_frames == 0:
                 h, w = frame.shape[:2]
 
-                # Check if resizing is needed
+                 #Check if resizing is needed
                 if w > max_width or h > max_height:
                     # Calculate scale factor
                     width_scale = max_width / w
@@ -116,7 +119,7 @@ class VideoChecker:
                 else:
                     resized_frame = frame  # No resizing needed
 
-                _, buffer = cv2.imencode(".jpg", frame)
+                _, buffer = cv2.imencode(".jpg", resized_frame) #originally just frame here
                 base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
 
             frame_id += 1
@@ -146,7 +149,7 @@ class VideoChecker:
                         {
                             "type": "input_text",
                             "text": (
-                                "At the very end of your reply, after the Markdown output, add a number in percent, of how confidence you are this is fake news. Leave out the percent sign and just give me the number."
+                                "At the very end of your reply, after the Markdown output, add a number in percent, of how how confident you are this is fake news (0 means it is guaranteed real news, 100 means it is guaranteed fake). Leave out the percent sign and just give me the number."
                             )
                         }
                     ]
@@ -199,7 +202,7 @@ class VideoChecker:
 
 
 test_video = VideoChecker()
-test_video.check_fake_news("https://scontent-muc2-1.cdninstagram.com/o1/v/t16/f2/m86/AQNWaTdA78Ug5enthEKFs8veqUEMekOQRP-N7Py8i00R_s2y3vQft_StD0vwI7RCw3sei9g7a5OtIN128xN8SHLIwWWbc-1NCnC7Ico.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=100&vs=672067241865076_1944884899&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC83NDRGQjE2RTVEMkRFNTc5NTNBRjVBMzY4QkU0RjY4MF92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPcFNKUjJ5SXdfNDZsMEVBQm9RbXdLdHJ3OV9icV9FQUFBRhUCAsgBACgAGAAbABUAACaEspuV3PLSPxUCKAJDMywXQCbdsi0OVgQYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfEL4YLCSTLWYvbCyJIxCtG6_HCrKfHQD7o2RN7iRRv4qA&oe=680E8F14&_nc_sid=d885a2")
+#test_video.check_fake_news("https://scontent-muc2-1.cdninstagram.com/o1/v/t16/f2/m86/AQNWaTdA78Ug5enthEKFs8veqUEMekOQRP-N7Py8i00R_s2y3vQft_StD0vwI7RCw3sei9g7a5OtIN128xN8SHLIwWWbc-1NCnC7Ico.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=100&vs=672067241865076_1944884899&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC83NDRGQjE2RTVEMkRFNTc5NTNBRjVBMzY4QkU0RjY4MF92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPcFNKUjJ5SXdfNDZsMEVBQm9RbXdLdHJ3OV9icV9FQUFBRhUCAsgBACgAGAAbABUAACaEspuV3PLSPxUCKAJDMywXQCbdsi0OVgQYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfEL4YLCSTLWYvbCyJIxCtG6_HCrKfHQD7o2RN7iRRv4qA&oe=680E8F14&_nc_sid=d885a2")
 
 #test_video.check_fake_news("https://scontent-fra3-1.cdninstagram.com/o1/v/t16/f2/m86/AQPk3oEeUPekgD9YQAGQHPv6BnBYRad_5GXOKuwaq2vVCvD_tEVoO0v4frmBQk3PDKFZn1ih19rfaqADx_g8Pzj94aHwbznj57yQ7VY.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=105&vs=1006743031580223_23287292&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9FMDQ1OEVFNUM0RjI2Q0M5MkI3RDc3QzE3QjlBNEZBRV92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPd3hTQjF1dDdKZXZTa0dBREJLSmMwYV9VcGhicV9FQUFBRhUCAsgBACgAGAAbABUAACaM4MewyK3NPxUCKAJDMywXQDwIcrAgxJwYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfGECnvWYlhvR4h7ybsP1T6n17Ph09ciWsSEYQW3Ph87AQ&oe=680EC9E3&_nc_sid=d885a2")
 
