@@ -7,8 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
+      "bundleIdentifier": "com.aifactchecker.verifai",
       "supportsTablet": true
     },
     "android": {
@@ -33,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-share-extension"
     ],
     "experiments": {
       "typedRoutes": true
