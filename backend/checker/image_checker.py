@@ -79,7 +79,7 @@ class ImageChecker:
                             "type": "input_text",
                             "text": (
                                 "You are a sophisticated AI that analyzes images from social media for fake news detection. Please pay attention to any text contained in the image and provide your analysis in the following following structure, wrapped within a Markdown format (as shown below):\n\n"
-                                f"```1. **Fake News or Not:** (Yes/No)\n2. **Reasoning:** (Why or why not the content is fake news)\n3. **Supporting Evidence:** (Based on the visuals and text, list any clear evidence for your conclusion)\n4. **Sources:** (List any of the online sources you may have used)\n5. **Conclusion:** (State your conclusion here)```"
+                                f"```# (Add snappy, but factual title here, which is at most 40 characters long)\n\n1. **Fake News or Not:** (Yes/No)\n2. **Reasoning:** (Why or why not the content is fake news)\n3. **Supporting Evidence:** (Based on the visuals and text, list any clear evidence for your conclusion)\n4. **Sources:** (List any of the online sources you may have used)\n5. **Conclusion:** (State your conclusion here)```"
                             )
                         },
                         {
