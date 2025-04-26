@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
-      "bundleIdentifier": "com.aifactchecker.verifai",
+      "bundleIdentifier": "com.dominiklangbein.ai-factchecker",
       "supportsTablet": true
     },
     "android": {
@@ -35,10 +35,45 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-share-extension"
+      [
+    "expo-share-extension",
+    {
+      "activationRules": [
+        { "type": "url", "max": 1 },
+        { "type": "text" }
+      ]
+    }
+  ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "aifactcheckerShareExtension",
+                  "bundleIdentifier": "com.dominiklangbein.ai-factchecker.ShareExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.dominiklangbein.ai-factchecker"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "8b4486fa-84fa-4c19-890b-0adbf6d18a4d"
+      },
+      "appleApplicationGroup": "group.com.dominiklangbein.ai-factchecker"
+    },
+    "owner": "dominiklangbein"
   }
 }

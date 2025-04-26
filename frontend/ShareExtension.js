@@ -7,7 +7,7 @@ export default function ShareExtension(props) {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text>Shared URL: {url}</Text>
-      <Text>Shared Text: {text}</Text>
+      <Text>Shared lalala Text: {text}</Text>
       <Button title="Close" onPress={close} />
     </View>
   );
