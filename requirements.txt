@@ -3,3 +3,11 @@ pydantic~=2.11.3
 openai 
 panel
 dotenv
+base64
+os
+requests
+opencv-python
+tempfile
+moviepy
+re
+markdown

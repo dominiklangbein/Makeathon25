@@ -1,5 +1,3 @@
-from IPython.display import display, Image, Audio
-
 import cv2  # We're using OpenCV to read video, to install !pip install opencv-python
 import base64
 from openai import OpenAI, api_key
@@ -9,7 +7,6 @@ import cv2
 from dotenv import load_dotenv
 import tempfile
 from moviepy import VideoFileClip
-import math
 import re
 import markdown
 
@@ -73,10 +70,18 @@ class VideoChecker:
         duration_seconds = frame_count / fps
         if duration_seconds < 10:
             in_between_frames = 5
+            max_width = 1280
+            max_height = 720
         elif duration_seconds < 60:
             in_between_frames = 25
-        else:
+            max_width = 1280
+            max_height = 720
+        elif duration_seconds < 600:
             in_between_frames = 50 #this block works regardless of processing logic -> keep as desired
+            max_width = 480
+            max_height = 360
+        else:
+            return ["```Video is too long to be supported by our current model.```", 0]
 
         audio_clip = VideoFileClip(tmp_filename).audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio_file:
@@ -90,8 +95,6 @@ class VideoChecker:
 
         #TODO: remove frame_count later
 
-        max_width = 1280
-        max_height = 720
         frame_id = 0
         base64Frames = []
         while video.isOpened():
@@ -102,7 +105,7 @@ class VideoChecker:
             if frame_id % in_between_frames == 0:
                 h, w = frame.shape[:2]
 
-                # Check if resizing is needed
+                 #Check if resizing is needed
                 if w > max_width or h > max_height:
                     # Calculate scale factor
                     width_scale = max_width / w
@@ -116,7 +119,7 @@ class VideoChecker:
                 else:
                     resized_frame = frame  # No resizing needed
 
-                _, buffer = cv2.imencode(".jpg", frame)
+                _, buffer = cv2.imencode(".jpg", resized_frame) #originally just frame here
                 base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
 
             frame_id += 1
@@ -146,7 +149,7 @@ class VideoChecker:
                         {
                             "type": "input_text",
                             "text": (
-                                "At the very end of your reply, after the Markdown output, add a number in percent, of how confidence you are this is fake news. Leave out the percent sign and just give me the number."
+                                "At the very end of your reply, after the Markdown output, add a number in percent, of how how confident you are this is fake news (0 means it is guaranteed real news, 100 means it is guaranteed fake). Leave out the percent sign and just give me the number."
                             )
                         }
                     ]
