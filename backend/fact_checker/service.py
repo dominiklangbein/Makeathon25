@@ -23,5 +23,5 @@ def check_url(url):
 
 
 url = "https://www.instagram.com/p/DI6iGH7st25/?utm_source=ig_web_copy_link"
-print(check_url(url))
-print("Finished")
+#print(check_url(url))
+#print("Finished")
