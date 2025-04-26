@@ -56,22 +56,27 @@ def extract_number_and_clean(md_text):
 class VideoChecker:
     def check_fake_news(self, video_url: str):
         client = OpenAI(api_key=API_KEY)
-
         response = requests.get(video_url) #here is where streaming would be useful, if it works
-        #assert response.status_code == 200
         video_bytes = response.content
 
-        #print(response.status_code, "\n", len(response.content)) -> seems fine
         #TODO: check for efficiency in using stream (start processing images, before full video loaded)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
             tmp_file.write(video_bytes)
             tmp_filename = tmp_file.name
 
-        print("Path: ", tmp_filename, "\n", "Size: ", os.path.getsize(tmp_filename) / 1024, "KB")  # -> seems fine
+        #print("Path: ", tmp_filename, "\n", "Size: ", os.path.getsize(tmp_filename) / 1024, "KB")  # -> seems fine
 
         video = cv2.VideoCapture(tmp_filename)  # open from temp file
-        print("Is video opened?", video.isOpened())
+        fps = video.get(cv2.CAP_PROP_FPS)
+        frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        duration_seconds = frame_count / fps
+        if duration_seconds < 10:
+            in_between_frames = 5
+        elif duration_seconds < 60:
+            in_between_frames = 25
+        else:
+            in_between_frames = 50 #this block works regardless of processing logic -> keep as desired
 
         audio_clip = VideoFileClip(tmp_filename).audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio_file:
@@ -83,32 +88,43 @@ class VideoChecker:
             file=open(tmp_audio_filename, "rb"),
         )
 
+        #TODO: remove frame_count later
+
+        max_width = 1280
+        max_height = 720
+        frame_id = 0
         base64Frames = []
         while video.isOpened():
             success, frame = video.read()
             if not success:
                 break
-            _, buffer = cv2.imencode(".jpg", frame)
-            base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
 
+            if frame_id % in_between_frames == 0:
+                h, w = frame.shape[:2]
 
-            #if frame_count % 100 == 0:
-            #    cv2.imshow("Frame", frame)
-            #    cv2.waitKey(500) #-> frames seem to work
+                # Check if resizing is needed
+                if w > max_width or h > max_height:
+                    # Calculate scale factor
+                    width_scale = max_width / w
+                    height_scale = max_height / h
+                    scale = min(width_scale, height_scale)
 
-        fps = video.get(cv2.CAP_PROP_FPS)
-        frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration_seconds = frame_count / fps
+                    new_w = int(w * scale)
+                    new_h = int(h * scale)
+
+                    resized_frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                else:
+                    resized_frame = frame  # No resizing needed
+
+                _, buffer = cv2.imencode(".jpg", frame)
+                base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
+
+            frame_id += 1
+
         print("FPS: ", fps, "\nFrames: ", frame_count, "\nDuration: ", duration_seconds)
 
 
         #TODO: instead of here, do this immediately in the video split
-        if duration_seconds < 10:
-            in_between_frames = 5
-        elif duration_seconds < 60:
-            in_between_frames = 25
-        else:
-            in_between_frames = 50
 
         audio_clip.close()
         video.release()
@@ -185,12 +201,12 @@ class VideoChecker:
         return cleaned_md, number_percent
 
 
-#test_video = VideoChecker()
+test_video = VideoChecker()
 #test_video.check_fake_news("https://scontent-muc2-1.cdninstagram.com/o1/v/t16/f2/m86/AQNWaTdA78Ug5enthEKFs8veqUEMekOQRP-N7Py8i00R_s2y3vQft_StD0vwI7RCw3sei9g7a5OtIN128xN8SHLIwWWbc-1NCnC7Ico.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=100&vs=672067241865076_1944884899&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC83NDRGQjE2RTVEMkRFNTc5NTNBRjVBMzY4QkU0RjY4MF92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPcFNKUjJ5SXdfNDZsMEVBQm9RbXdLdHJ3OV9icV9FQUFBRhUCAsgBACgAGAAbABUAACaEspuV3PLSPxUCKAJDMywXQCbdsi0OVgQYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfEL4YLCSTLWYvbCyJIxCtG6_HCrKfHQD7o2RN7iRRv4qA&oe=680E8F14&_nc_sid=d885a2")
 
-#test_video.check_fake_news("https://scontent-fra3-1.cdninstagram.com/o1/v/t16/f2/m86/AQPk3oEeUPekgD9YQAGQHPv6BnBYRad_5GXOKuwaq2vVCvD_tEVoO0v4frmBQk3PDKFZn1ih19rfaqADx_g8Pzj94aHwbznj57yQ7VY.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=105&vs=1006743031580223_23287292&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9FMDQ1OEVFNUM0RjI2Q0M5MkI3RDc3QzE3QjlBNEZBRV92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPd3hTQjF1dDdKZXZTa0dBREJLSmMwYV9VcGhicV9FQUFBRhUCAsgBACgAGAAbABUAACaM4MewyK3NPxUCKAJDMywXQDwIcrAgxJwYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfGECnvWYlhvR4h7ybsP1T6n17Ph09ciWsSEYQW3Ph87AQ&oe=680EC9E3&_nc_sid=d885a2")
+test_video.check_fake_news("https://scontent-fra3-1.cdninstagram.com/o1/v/t16/f2/m86/AQPk3oEeUPekgD9YQAGQHPv6BnBYRad_5GXOKuwaq2vVCvD_tEVoO0v4frmBQk3PDKFZn1ih19rfaqADx_g8Pzj94aHwbznj57yQ7VY.mp4?stp=dst-mp4&efg=eyJxZV9ncm91cHMiOiJbXCJpZ193ZWJfZGVsaXZlcnlfdnRzX290ZlwiXSIsInZlbmNvZGVfdGFnIjoidnRzX3ZvZF91cmxnZW4uY2xpcHMuYzIuNzIwLmJhc2VsaW5lIn0&_nc_cat=105&vs=1006743031580223_23287292&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC9FMDQ1OEVFNUM0RjI2Q0M5MkI3RDc3QzE3QjlBNEZBRV92aWRlb19kYXNoaW5pdC5tcDQVAALIAQAVAhg6cGFzc3Rocm91Z2hfZXZlcnN0b3JlL0dPd3hTQjF1dDdKZXZTa0dBREJLSmMwYV9VcGhicV9FQUFBRhUCAsgBACgAGAAbABUAACaM4MewyK3NPxUCKAJDMywXQDwIcrAgxJwYEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HAA%3D%3D&ccb=9-4&oh=00_AfGECnvWYlhvR4h7ybsP1T6n17Ph09ciWsSEYQW3Ph87AQ&oe=680EC9E3&_nc_sid=d885a2")
 
 text_for_test = f"```1. **Fake News or Not:** (Yes/No)\n2. **Reasoning:** (Why or why not the content is fake news)\n3. **Supporting Evidence:** (Based on the visuals and transcription, list any clear evidence for your conclusion)\n4. **Sources:** (List any of the online sources you may have used)\n5. **Conclusion:** (State your conclusion here``` 0)"
-print(extract_number_and_clean(text_for_test))
+#print(extract_number_and_clean(text_for_test))
 
 
