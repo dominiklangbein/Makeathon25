@@ -1,15 +1,92 @@
-import React, { useState } from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {MaterialIcons} from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 /* import { LinearGradient } from 'expo-linear-gradient';
 import CircularProgress from 'react-native-circular-progress-indicator';*/
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Welcome');
   const [loading, setLoading] = useState(false);
+
+
+   // Linking setup
+  useEffect(() => {
+  const handleDeepLink = async (event) => {
+    const url = event.url;
+    const { path } = Linking.parse(url);
+    console.log('Received Deep Link:', path);
+
+
+      try {
+        const response = await fetch(`http://localhost:8000/fact_checker/status/${path}`);
+        const data = await response.json();
+
+        if (data.status === 'done') {
+          const resultMarkdown = data.result;
+          console.log('Fact-Check Result:\n', resultMarkdown);
+
+          Alert.alert('Fact-Check Complete', 'The fact-checking process is done!', [
+            { text: 'OK', onPress: () => setActiveTab('Fact Check') }
+          ]);
+        } else if (data.status === 'error') {
+          Alert.alert('Error', `Job failed: ${data.result}`);
+        } else {
+          Alert.alert('Pending', 'The fact-checking process is still running.');
+        }
+      } catch (error) {
+        console.error('Error fetching job status:', error);
+        Alert.alert('Error', 'Could not fetch job status.');
+      }
+  };
+
+  const subscription = Linking.addEventListener('url', handleDeepLink);
+
+  Linking.getInitialURL().then((url) => {
+    if (url) handleDeepLink({ url });
+  });
+
+  return () => subscription.remove();
+}, []);
+
+  const fetchJobStatus = async (jobId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8000/fact_checker/status/${jobId}`);
+      const data = await response.json();
+
+      if (data.status === 'done') {
+        const resultMarkdown = formatResultToMarkdown(data.result);
+        console.log('Fact-Check Result from Backend:\n', resultMarkdown);  // Log result to console
+
+        Alert.alert(
+          'Fact-Check Complete',
+          'The fact-checking process is done! (Check console for backend result)',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setActiveTab('Fact Check');  // UI stays with dummy data
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+      } else if (data.status === 'error') {
+        Alert.alert('Error', `Job failed: ${data.result}`);
+      } else {
+        setTimeout(() => fetchJobStatus(jobId), 3000); // poll again if pending
+      }
+    } catch (error) {
+      console.error('Error fetching job status:', error);
+      Alert.alert('Error', 'Could not fetch job status.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   const markdownWelcome = `# Welcome to VerifAI!`;
   const markdownFactCheck = `1. **Fake News or Not:** No
