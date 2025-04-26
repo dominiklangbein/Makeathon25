@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "ai-factchecker",
-    "slug": "ai-factchecker",
+    "name": "MyShareApp",
+    "slug": "myshareapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
-      "bundleIdentifier": "com.aifactchecker.verifai",
+      "bundleIdentifier": "com.dominiklangbein.myshareapp",
       "supportsTablet": true
     },
     "android": {
