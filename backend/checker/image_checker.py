@@ -7,8 +7,6 @@ import markdown
 load_dotenv()
 API_KEY = os.environ.get('OPENAI_KEY')
 
-#TODO:change temperature for final release
-
 def clean_markdown_block(md_text):
     cleaned = re.sub(r'^```[ ]*markdown[ ]*\n', '```', md_text, flags=re.IGNORECASE)
     return cleaned
@@ -85,7 +83,7 @@ class ImageChecker:
                         {
                             "type": "input_text",
                             "text": (
-                                "At the very end of your reply, after the Markdown output, add a number in percent, of how confidence you are this is fake news. Leave out the percent sign and just give me the number."
+                                "At the very end of your reply, after the Markdown output, add a number in percent, of how confident you are this is fake news (0 means it is guaranteed real news, 100 means it is guaranteed fake). Leave out the percent sign and just give me the number."
                             )
                         }
                     ]
@@ -130,6 +128,6 @@ class ImageChecker:
 #        encoded = base64.b64encode(img_file.read()).decode("utf-8")
 #    return encoded
 #image = encode_image_to_base64("360_F_571212905_TW2oYC90IzPOKYGEqNKi6Tko8iSbl0Ej.jpg")
-icheck = ImageChecker()
+#icheck = ImageChecker()
 #print(icheck.check_for_fake_news("https://scontent-muc2-1.cdninstagram.com/v/t51.2885-15/491462880_18081225868673114_1244726184351464140_n.webp?stp=dst-jpg_e35_s1080x1080_sh0.08_tt6&_nc_ht=scontent-muc2-1.cdninstagram.com&_nc_cat=102&_nc_oc=Q6cZ2QEV_bto-AqChcCZOizEQCej1xdUIv2ESctWl7WhRzT5s-wVrg2qQWV1r3SjF7lHf4g&_nc_ohc=owZNrZe5UKQQ7kNvwHMPTF9&_nc_gid=NRWP9eDTzCOXah_vbwOBSg&edm=ANTKIIoBAAAA&ccb=7-5&oh=00_AfFBcIFpKMhfigdV7EYN0kEqkYMikcSLUs-Qwzrf2TKWqg&oe=68129328&_nc_sid=d885a2"))
 #print(icheck.check_for_fake_news("https://scontent-muc2-1.cdninstagram.com/v/t51.2885-15/491462880_18081225868673114_1244726184351464140_n.webp?stp=dst-jpg_e35_s1080x1080_sh0.08_tt6&_nc_ht=scontent-muc2-1.cdninstagram.com&_nc_cat=102&_nc_oc=Q6cZ2QEV_bto-AqChcCZOizEQCej1xdUIv2ESctWl7WhRzT5s-wVrg2qQWV1r3SjF7lHf4g&_nc_ohc=owZNrZe5UKQQ7kNvwHMPTF9&_nc_gid=NRWP9eDTzCOXah_vbwOBSg&edm=ANTKIIoBAAAA&ccb=7-5&oh=00_AfFBcIFpKMhfigdV7EYN0kEqkYMikcSLUs-Qwzrf2TKWqg&oe=68129328&_nc_sid=d885a2", "LIKE AND FOLLOW!"))
