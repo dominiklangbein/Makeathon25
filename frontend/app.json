@@ -9,6 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
+      "icon": "./assets/images/verifAI_logo.png",
+      "splash": {
+        "image": "./assets/images/verifAI_logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#f8f6f3"
+      },
       "bundleIdentifier": "com.dominiklangbein.ai-factchecker",
       "supportsTablet": true
     },

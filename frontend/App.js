@@ -1,15 +1,29 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import {MaterialIcons} from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-/* import { LinearGradient } from 'expo-linear-gradient';
-import CircularProgress from 'react-native-circular-progress-indicator';*/
+import * as Progress from 'react-native-progress';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Welcome');
   const [loading, setLoading] = useState(false);
-
+  const [factCheckMarkdown, setFactCheckMarkdown] = useState('');
+  const [factCheckNumber, setFactCheckNumber] = useState(0.0);
+  const [factCheckTitle, setFactCheckTitle] = useState('');
+  const [userInput, setUserInput] = useState('');
 
    // Linking setup
   useEffect(() => {
@@ -18,14 +32,21 @@ export default function App() {
     const { path } = Linking.parse(url);
     console.log('Received Deep Link:', path);
 
-
       try {
         const response = await fetch(`http://localhost:8000/fact_checker/status/${path}`);
         const data = await response.json();
 
         if (data.status === 'done') {
-          const resultMarkdown = data.result;
-          console.log('Fact-Check Result:\n', resultMarkdown);
+          const fullResult = data.result[0].slice(3, -3);
+          const [responseTitel, ...restLines] = fullResult.split('\n');
+          const resultMarkdown = restLines.join('\n');
+          const responseNumber = data.result[1];
+          console.log('Content:\n', resultMarkdown);
+          console.log('Number:\n', responseNumber)
+          console.log('Title:\n', responseTitel)
+          setFactCheckMarkdown(resultMarkdown);
+          setFactCheckNumber(responseNumber)
+          setFactCheckTitle(responseTitel.slice(2))
 
           Alert.alert('Fact-Check Complete', 'The fact-checking process is done!', [
             { text: 'OK', onPress: () => setActiveTab('Fact Check') }
@@ -48,67 +69,47 @@ export default function App() {
   });
 
   return () => subscription.remove();
-}, []);
+  }, []);
 
-  const fetchJobStatus = async (jobId) => {
-    setLoading(true);
+  const process_url = async (url) => {
+    setFactCheckMarkdown('');
+    setFactCheckNumber(0);
+    setFactCheckTitle('');
+    setLoading(true)
+    setActiveTab('Fact Check')
     try {
-      const response = await fetch(`http://localhost:8000/fact_checker/status/${jobId}`);
+      const response = await fetch('http://localhost:8000/fact_checker/checker_url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
       const data = await response.json();
+      console.log("Hier kommt er noch an \n", data)
 
-      if (data.status === 'done') {
-        const resultMarkdown = formatResultToMarkdown(data.result);
-        console.log('Fact-Check Result from Backend:\n', resultMarkdown);  // Log result to console
+      const fullResult_url = data[0].slice(3, -3);
+      console.log('Hier komme ich nicht hin')
+      const [responseTitel_url, ...restLines_url] = fullResult_url.split('\n');
+      const resultMarkdown_url = restLines_url.join('\n');
+      const responseNumber_url = data[1];
+      console.log('Content:\n', resultMarkdown_url);
+      console.log('Number:\n', responseNumber_url)
+      console.log('Title:\n', responseTitel_url)
+      setFactCheckMarkdown(resultMarkdown_url);
+      setFactCheckNumber(responseNumber_url)
+      setFactCheckTitle(responseTitel_url.slice(2))
 
-        Alert.alert(
-          'Fact-Check Complete',
-          'The fact-checking process is done! (Check console for backend result)',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setActiveTab('Fact Check');  // UI stays with dummy data
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-      } else if (data.status === 'error') {
-        Alert.alert('Error', `Job failed: ${data.result}`);
-      } else {
-        setTimeout(() => fetchJobStatus(jobId), 3000); // poll again if pending
-      }
+      Alert.alert('Fact-Check Complete', 'The fact-checking process is done!', [
+        { text: 'OK', onPress: () => setActiveTab('Fact Check') }
+      ]);
     } catch (error) {
       console.error('Error fetching job status:', error);
       Alert.alert('Error', 'Could not fetch job status.');
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-
+  }
 
   const markdownWelcome = `# Welcome to VerifAI!`;
-  const markdownFactCheck = `1. **Fake News or Not:** No
-
-2. **Reasoning:** 
-   The video frames show a group of young men performing a stunt where a metal rod is being pressed against their mouths or jaws, likely as a display of strength or endurance. The transcript "میری تیجاں ڈھونڈی پھا۔" (transliteration: "meri tejan dhoondi pha") is in Saraiki/Punjabi and roughly translates to "I have found my strength" or "I have found my energy." There is no indication from the visuals or the transcript that this video is making any factual claim about news, politics, health, or any other topic that could be classified as "fake news." It appears to be a stunt or entertainment video.
-
-3. **Supporting Evidence:**
-   - The visuals show a physical stunt, not a news event or informational content.
-   - The transcript is a personal or motivational statement, not a factual claim.
-   - There are no references to current events, health advice, or any controversial topic.
-   - The setting and participants suggest a casual, possibly rural environment, typical for social media entertainment content.
-
-4. **Sources:**
-   - [General understanding of fake news criteria](https://en.wikipedia.org/wiki/Fake_news)
-   - [Translation and context of Saraiki/Punjabi phrase](https://translate.google.com/)
-
-5. **Conclusion:**
-   The video is not fake news. It is a stunt or entertainment video with no connection to any news topic or factual claim that could be classified as misinformation or disinformation.
-`;
-
-
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: activeTab === 'Welcome' ? '#f8f6f3' : 'white' }]}>
@@ -116,6 +117,9 @@ export default function App() {
       {activeTab === 'Fact Check' && (
         <View style={styles.appBar}>
           <MaterialIcons name="arrow-back-ios" size={24} color="black" style={{ marginLeft: 10 }} onPress={() => setActiveTab('Welcome')}/>
+          <View style={styles.titleContainer}>
+            <Text style={styles.factcheck_title}>{factCheckTitle}</Text>
+          </View>
           <Image
             source={require('./assets/images/verifAI_logo.png')}
             style={styles.appBarLogo}
@@ -136,24 +140,18 @@ export default function App() {
             <Markdown style={markdownStyles}>
               {markdownWelcome}
             </Markdown>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Paste your link here..."
+              placeholderTextColor="#aaa"
+              value={userInput}
+              onChangeText={text => setUserInput(text)} />
 
             <View style={styles.buttonGroup}>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#2aa1c9' }]}
-                onPress={() => setActiveTab('Fact Check')}>
-                <Text style={styles.buttonText}>FACT CHECK</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
                 style={[styles.button, { backgroundColor: '#3884d5' }]}
-                onPress={() => setActiveTab('Fact Check')}>
-                <Text style={styles.buttonText}>FACT CHECK and CLOSE</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#644fdd' }]}
-                onPress={() => setActiveTab('Fact Check')}>
-                <Text style={styles.buttonText}>CLOSE</Text>
+                onPress={() => process_url(userInput)}>
+                <Text style={styles.buttonText}>FACT CHECK</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -161,21 +159,55 @@ export default function App() {
 
         {/* Fact Check screen content */}
         {activeTab === 'Fact Check' && (
-        <View style={styles.markdownContainerFactCheck}>
-          <Markdown style={markdownStyles}>
-            {markdownFactCheck}
-          </Markdown>
-        </View>
+          <View style={styles.markdownContainerFactCheck}>
+            {loading ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+                <View style={{ transform: [{ scale: 1.25 }] }}>
+                  <ActivityIndicator size="large" color="#3884d5" />
+                </View>
+                <Text style={{ marginTop: 20, fontSize: 18 }}>Fact-checking in progress...</Text>
+              </View>
+            ) : (
+              <>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ marginBottom: 10, fontSize: 18 }}>
+                    Fake News Probability: {factCheckNumber.toString()}%
+                  </Text>
+                  <Progress.Bar
+                    progress={factCheckNumber / 100}
+                    width={250}
+                    height={15}
+                    borderRadius={8}
+                    color={
+                      factCheckNumber < 30
+                        ? 'green'
+                        : factCheckNumber < 60
+                        ? 'yellow'
+                        : 'red'
+                    }
+                    style={{ marginBottom: 20 }}
+                  />
+                </View>
+                <Markdown style={markdownStyles}>
+                  {factCheckMarkdown}
+                </Markdown>
+              </>
+            )}
+          </View>
         )}
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <ImageBackground
+        source={require('./assets/images/BottomNavigationBarBanner.png')} // Adjust the path!
+        style={styles.bottomNav}
+        resizeMode="cover"
+      >
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => setActiveTab('Welcome')}
         >
-          <MaterialIcons name="home" size={28} color={activeTab === 'Welcome' ? '#f8f5f3' : '#777'} />
+          <MaterialIcons name="home" size={28} color={activeTab === 'Welcome' ? '#f8f5f3' : '#888'} />
           <Text style={[styles.navText, activeTab === 'Welcome' && styles.activeNavText]}>Home</Text>
         </TouchableOpacity>
 
@@ -183,10 +215,10 @@ export default function App() {
           style={styles.navButton}
           onPress={() => setActiveTab('Fact Check')}
         >
-          <MaterialIcons name="fact-check" size={28} color={activeTab === 'Fact Check' ? '#f8f5f3' : '#777'}/>
+          <MaterialIcons name="fact-check" size={28} color={activeTab === 'Fact Check' ? '#f8f5f3' : '#888'} />
           <Text style={[styles.navText, activeTab === 'Fact Check' && styles.activeNavText]}>Fact Check</Text>
         </TouchableOpacity>
-      </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -210,6 +242,19 @@ const styles = StyleSheet.create({
     height: 60,
     marginLeft: 'auto',
     marginRight: 10
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  factcheck_title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'left',
+    flexWrap: 'wrap',
+    marginRight: 10,
   },
   scrollContent: {
     padding: 10,
@@ -245,7 +290,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 35,
   },
   button: {
     width: '85%',
@@ -273,12 +317,23 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 12,
-    color: '#777',
+    color: '#888',
     marginTop: 4,
   },
   activeNavText: {
     color: '#f8f5f3',
     fontWeight: 'bold',
+  },
+  textInput: {
+    width: '85%',
+    height: 50,
+    borderColor: '#2aa1c9',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 18,
+    marginTop: 150,
+    color: '#333',
   },
 });
 

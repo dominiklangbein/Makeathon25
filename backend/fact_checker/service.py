@@ -45,6 +45,22 @@ class FactCheckerService:
         except Exception as e:
             self.job_store.update_job(job_id, {"status": "error", "result": str(e)})
 
+
+    def process_url(self, url):
+        downloader = instagram_crawler.Downloader()
+        instagram_content = downloader.fetch_instagram_post(url)
+        content_url = instagram_content.content_url
+        caption = instagram_content.caption
+
+        if instagram_content.is_video:
+            checker = video_checker.VideoChecker()
+            result = checker.check_fake_news(content_url)
+        else:
+            checker = image_checker.ImageChecker()
+            result = checker.check_for_fake_news(content_url, caption)
+
+        return result
+
     def get_status(self, job_id):
         job = self.job_store.get_job(job_id)
         if not job:
@@ -67,3 +83,8 @@ class JobStore:
 
     def get_job(self, job_id):
         return self.jobs.get(job_id)
+
+post_url = "https://www.instagram.com/p/DI60fuvsGef/"
+tmp = FactCheckerService(JobStore())
+#res = tmp.process_url(post_url)
+#print(res)
