@@ -34,7 +34,7 @@ To set up the project locally, follow these general steps:
 
 - Node.js and npm installed
 - Python 3 installed
-- Expo CLI installed globally for React Native development
+- Expo CLI installed globally for React Native development ([see Expo Documentation](https://docs.expo.dev/more/expo-cli/))
 
 ## Installation
 
