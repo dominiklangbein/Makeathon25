@@ -6,6 +6,9 @@ Makeathon 2025 is a collaborative project developed by Sebastian Müller, Moritz
 
 While specific details about the project's objectives and functionalities are not provided in the repository, the structure suggests a full-stack application setup. The presence of frontend and backend directories indicates a separation of concerns, typical in modern web development projects.
 
+## Demo Videos:
+https://syncandshare.lrz.de/getlink/fi7JMCYaVRNrNaURUvfXto/
+
 ## Repository Structure
 
 ```
